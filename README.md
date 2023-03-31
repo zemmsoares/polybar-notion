@@ -1,0 +1,2 @@
+# polybar-notion
+module
