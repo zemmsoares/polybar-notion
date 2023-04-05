@@ -26,6 +26,7 @@ response = requests.post(url, headers=headers, data=json.dumps(data))
 # Check the response status code
 if response.status_code == 200:
 
+    
 
    # Initialize the dictionaries and lists
     tasks_by_date = {}
@@ -34,32 +35,34 @@ if response.status_code == 200:
 
     # Loop through the results
     for result in response.json()['results']:
+
         try:
-            status = result['properties']['Status']['select']['name']
+            status = result['properties']['Status']['status']['id']
         except KeyError:
             status = None
             
         try:
-            title = result['properties']['Name']['title'][0]['text']['content']
-        except (KeyError, IndexError):
-            title = None
-            
-        try:
-            due_date = result['properties']['Due Date']['date']['start']
+            due_date = result['properties']['Due']['date']['start']
         except (KeyError, TypeError):
             due_date = None
 
+        print(due_date)
+        print(status)
 
         # Add the task to the appropriate group
-        if due_date == None and status == 'To Do':
-            tasks_no_due_date.append(result)
-        elif due_date == datetime.today().strftime('%Y-%m-%d') and status == 'To Do':
+        if due_date == datetime.today().strftime('%Y-%m-%d') and status != 'done':
             if due_date not in tasks_by_date:
                 tasks_by_date[due_date] = [result]
             else:
                 tasks_by_date[due_date].append(result)
-        elif status == 'To Do' and due_date < datetime.today().strftime('%Y-%m-%d'):
+        elif status != 'done' and due_date is not None and due_date <= datetime.today().strftime('%Y-%m-%d'):
             tasks_overdue.append(result)
+        elif status != 'done' and due_date is None:
+            tasks_no_due_date.append(result)
+        #also adding future tasks into tasks_no_due_date
+        elif status != 'done' and due_date >= datetime.today().strftime('%Y-%m-%d'):
+            tasks_no_due_date.append(result);
+
     
     # Print the results
     today_count = len(tasks_by_date.get(datetime.today().strftime('%Y-%m-%d'), []))
